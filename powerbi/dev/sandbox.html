@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Power BI sandbox replica</title></head>
+<body>
+<div id="log">setting up…</div>
+<script>
+// Replicate the Power BI custom-visual sandbox: an iframe with ONLY allow-scripts
+// (opaque/null origin, no allow-same-origin) and Power BI's default CSP that
+// includes 'unsafe-eval' (which permits WebAssembly). We load the REAL doom.js
+// inline (no subresource fetch, exactly like a packaged pbiviz bundle).
+window.__sandbox = [];
+window.addEventListener("message", (e) => {
+  if (e.data && e.data.type === "doom") {
+    window.__sandbox.push(e.data);
+    document.getElementById("log").textContent = JSON.stringify(window.__sandbox);
+  }
+});
+
+const boot = `
+  const cv = document.getElementById('s');
+  const ctx = cv.getContext('2d', { alpha:false });
+  const img = ctx.createImageData(640,400);
+  const mod = {};
+  mod.dgBlit = (ptr,w,h) => { const heap = mod.HEAPU8; if(!heap) return; img.data.set(heap.subarray(ptr, ptr+w*h*4)); ctx.putImageData(img,0,0); };
+  function report(o){ parent.postMessage(Object.assign({type:'doom'}, o), '*'); }
+  report({ stage:'start', wasmType: typeof WebAssembly, origin: String(location.origin) });
+  try {
+    createDoom(mod).then(() => {
+      setTimeout(() => {
+        try { for (let i=0;i<200;i++) mod._doomgeneric_Tick(); }
+        catch(e){ return report({ stage:'tick', error:String(e) }); }
+        const d = ctx.getImageData(0,0,640,400).data; let nb=0; const c=new Set();
+        for (let i=0;i<d.length;i+=4){ if(d[i]+d[i+1]+d[i+2]>10) nb++; if(i%160===0) c.add((d[i]<<16)|(d[i+1]<<8)|d[i+2]); }
+        report({ stage:'ok', wasm:true, nonBlackPct:+(100*nb/(d.length/4)).toFixed(1), colors:c.size });
+      }, 50);
+    }).catch(e => report({ stage:'init', error:String(e) }));
+  } catch(e){ report({ stage:'sync', error:String(e) }); }
+`;
+
+fetch("/src/doom.js").then(r => r.text()).then(js => {
+  const csp = "default-src data: blob: 'unsafe-inline' 'unsafe-eval';";
+  const html =
+    "<!doctype html><html><head>" +
+    '<meta http-equiv="Content-Security-Policy" content="' + csp + '">' +
+    "</head><body><canvas id='s' width='640' height='400'></canvas>" +
+    "<scr" + "ipt>" + js + "\n;" + boot + "</scr" + "ipt></body></html>";
+  const f = document.createElement("iframe");
+  f.setAttribute("sandbox", "allow-scripts"); // NO allow-same-origin => opaque origin, like Power BI
+  f.width = 660; f.height = 430;
+  f.srcdoc = html;
+  document.body.appendChild(f);
+  document.getElementById("log").textContent = "iframe injected (sandbox=allow-scripts, CSP set)…";
+});
+</script>
+</body>
+</html>

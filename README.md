@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 Sound is much harder to implement! If you need sound, take a look at SDL port. It fully supports sound and music! Where to start? Define FEATURE_SOUND, assign DG_sound_module and DG_music_module.
 
 # platforms
-Ported platforms include Windows, X11, SDL, emscripten. Just look at (doomgeneric_win.c, doomgeneric_xlib.c, doomgeneric_sdl.c).
+Ported platforms include Windows, X11, SDL, emscripten and a Power BI custom visual. Just look at (doomgeneric_win.c, doomgeneric_xlib.c, doomgeneric_sdl.c, doomgeneric_pbi.c).
 Makefiles provided for each platform.
 
 ## emscripten
@@ -53,6 +53,9 @@ You can try it directly here:
 https://ozkl.github.io/doomgeneric/
 
 emscripten port is based on SDL port, so it supports sound and music! For music, timidity backend is used.
+
+## Power BI
+DOOM as a Power BI **custom visual**: `doomgeneric_pbi.c` is a no-SDL browser backend that blits `DG_ScreenBuffer` to a `<canvas>`, built with `Makefile.pbi` into a single-file WebAssembly bundle (engine + shareware WAD inlined) that runs entirely offline inside Power BI's sandboxed visual iframe. The visual wrapper, build scripts and import instructions live in [powerbi/](powerbi/README.md).
 
 ## Windows
 ![Windows](screenshots/windows.png)

@@ -1,0 +1,26 @@
+{
+  "visual": {
+    "name": "doomPbi",
+    "displayName": "Doom in Power BI",
+    "guid": "doomPbi7BE58EF18F8F4F2CA049FD7000A506E2",
+    "visualClassName": "Visual",
+    "version": "1.0.2.0",
+    "description": "Runs the shareware DOOM (WebAssembly) inside a Power BI report. Click the visual, then play.",
+    "supportUrl": "https://github.com/statisticsVW/doomgeneric",
+    "gitHubUrl": "https://github.com/statisticsVW/doomgeneric"
+  },
+  "apiVersion": "5.3.0",
+  "author": {
+    "name": "statisticsVW",
+    "email": "291998403+statisticsVW@users.noreply.github.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": null,
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": [],
+  "version": "1.0.2.0"
+}

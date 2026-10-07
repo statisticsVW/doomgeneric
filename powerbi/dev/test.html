@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Doom WASM smoke test</title>
+<style>
+  body { background:#111; color:#ddd; font-family:sans-serif; text-align:center; }
+  canvas { image-rendering:pixelated; background:#000; width:640px; height:400px; outline:1px solid #444; }
+  #status { margin:8px; font-size:14px; }
+</style>
+</head>
+<body>
+  <div id="status">loading…</div>
+  <canvas id="screen" width="640" height="400" tabindex="0"></canvas>
+  <script src="/src/doom.js"></script>
+  <script>
+    const cv = document.getElementById('screen');
+    const ctx = cv.getContext('2d', { alpha:false });
+    const img = ctx.createImageData(640, 400);
+    const status = document.getElementById('status');
+    let frames = 0;
+
+    const K = { LEFT:0xac, RIGHT:0xae, UP:0xad, DOWN:0xaf, USE:0xa2, FIRE:0xa3, ENTER:13, ESC:27 };
+    const mod = {};
+    mod.dgBlit = (ptr, w, h) => {
+      const heap = mod.HEAPU8;
+      if (!heap) return;
+      img.data.set(heap.subarray(ptr, ptr + w*h*4));
+      ctx.putImageData(img, 0, 0);
+      frames++;
+      if (frames === 1) status.textContent = 'first frame rendered';
+      window.__doomFrames = frames;
+    };
+
+    function mapKey(e){
+      switch(e.code){
+        case 'ArrowUp': case 'KeyW': return K.UP;
+        case 'ArrowDown': case 'KeyS': return K.DOWN;
+        case 'ArrowLeft': return K.LEFT;
+        case 'ArrowRight': return K.RIGHT;
+        case 'Space': return K.USE;
+        case 'ControlLeft': case 'ControlRight': return K.FIRE;
+        case 'Enter': return K.ENTER;
+        case 'Escape': return K.ESC;
+      }
+      if (e.key.length === 1){ const c = e.key.toLowerCase().charCodeAt(0); if (c>=32 && c<127) return c; }
+      return -1;
+    }
+    function onKey(e, pressed){ const k = mapKey(e); if (k<0) return; e.preventDefault(); if (mod._dg_add_key) mod._dg_add_key(pressed, k); }
+    cv.addEventListener('keydown', e => onKey(e,1));
+    cv.addEventListener('keyup', e => onKey(e,0));
+    cv.addEventListener('mousedown', () => cv.focus());
+
+    // expose a helper so automation can press a key without real keyboard focus
+    window.__press = (k) => { if (mod._dg_add_key){ mod._dg_add_key(1,k); setTimeout(()=>mod._dg_add_key(0,k),50); } };
+    window.__K = K;
+    window.__mod = mod;
+    // Manual frame driver, independent of requestAnimationFrame (which pauses on hidden tabs).
+    window.__tick = (n) => { for (let i=0;i<(n||1);i++){ try { mod._doomgeneric_Tick(); } catch(e){ return 'err:'+e; } } return frames; };
+
+    createDoom(mod).then(() => { status.textContent = (status.textContent || '') + ' | runtime initialized'; })
+      .catch(err => { status.textContent = 'ERROR: ' + err; console.error(err); });
+  </script>
+</body>
+</html>

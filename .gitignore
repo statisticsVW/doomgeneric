@@ -9,5 +9,16 @@
 Debug/
 Release/
 Build/
-doomgeneric
-doomgeneric.map
+/doomgeneric/doomgeneric
+/doomgeneric/doomgeneric.map
+
+# Power BI port (see powerbi/README.md)
+doomgeneric/*.wad
+doomgeneric/*.WAD
+doomgeneric/doom.js
+powerbi/node_modules/
+powerbi/dist/
+powerbi/.tmp/
+powerbi/src/doom.js
+powerbi/*.statistics*.html
+*.pbiviz

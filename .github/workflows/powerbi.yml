@@ -1,0 +1,43 @@
+name: Power BI visual
+
+on:
+  push:
+    paths: ["powerbi/**", "doomgeneric/doomgeneric_pbi.c", "doomgeneric/Makefile.pbi"]
+  pull_request:
+    paths: ["powerbi/**", "doomgeneric/doomgeneric_pbi.c", "doomgeneric/Makefile.pbi"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: powerbi
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: powerbi/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint .
+
+      # Typechecks without src/doom.js, the generated ~6 MB bundle that is not
+      # committed. visual.ts reaches it through a local `declare function
+      # require`, so the compiler never needs the file itself.
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      # Compile-check the platform shim and the Makefile against upstream
+      # Emscripten. No WAD in CI, so stop before the (WAD-embedding) link step.
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.64
+      - name: Compile engine objects
+        working-directory: doomgeneric
+        run: make -f Makefile.pbi print build/doomgeneric_pbi.o build/doomgeneric.o build/i_video.o
